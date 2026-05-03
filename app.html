@@ -279,7 +279,7 @@ function R(){
     if(ccPenas.length>0){
       const todas=[penaPrinc,...ccPenas].filter(p=>p>0);
       const maior=Math.max(...todas);
-      if(S.concTipo==='material') ccTotal=todas.reduce((a,b)=>a+b,0);
+      if(S.concTipo==='material'||S.concTipo==='formal_imp') ccTotal=todas.reduce((a,b)=>a+b,0);
       else if(S.concTipo==='formal') ccTotal=maior*(1+S.concFrac);
       else ccTotal=maior*(1+S.concFrac);
     }
@@ -301,10 +301,11 @@ function R(){
     if(ccList.length>0){
     h+=`<div style="margin-bottom:14px"><label class="sm">Tipo de concurso</label>
     <div class="opts"><div class="opt${S.concTipo==='material'?' on':''}" onclick="S.concTipo='material';R()">Material (Art. 69) — Soma</div>
-    <div class="opt${S.concTipo==='formal'?' on':''}" onclick="S.concTipo='formal';R()">Formal (Art. 70) — Maior + fração</div>
+    <div class="opt${S.concTipo==='formal'?' on':''}" onclick="S.concTipo='formal';R()">Formal próprio (Art. 70) — Maior + fração</div>
+    <div class="opt${S.concTipo==='formal_imp'?' on':''}" onclick="S.concTipo='formal_imp';R()">Formal impróprio (Art. 70, 2ª parte) — Soma</div>
     <div class="opt${S.concTipo==='continuado'?' on':''}" onclick="S.concTipo='continuado';R()">Continuado (Art. 71) — Maior + fração</div></div></div>`;
 
-    if(S.concTipo!=='material'){
+    if(S.concTipo==='formal'||S.concTipo==='continuado'){
     h+=`<div style="margin-bottom:14px"><label class="sm">Fração de aumento (${S.concTipo==='formal'?'1/6 a 1/2':'1/6 a 2/3'})</label>
     <div class="opts">
     <div class="opt${Math.abs(S.concFrac-1/6)<.01?' on':''}" onclick="S.concFrac=1/6;R()">1/6</div>
@@ -314,10 +315,13 @@ function R(){
     <div class="opt${Math.abs(S.concFrac-1/2)<.01?' on':''}" onclick="S.concFrac=1/2;R()">1/2</div>
     ${S.concTipo==='continuado'?`<div class="opt${Math.abs(S.concFrac-2/3)<.01?' on':''}" onclick="S.concFrac=2/3;R()">2/3</div>`:''}</div></div>`;}
 
+    if(S.concTipo==='continuado'){
+    h+=`<p class="warn" style="margin-bottom:14px">⚠ Crime continuado específico (Art. 71, p.ú.): doloso, contra vítimas diferentes, com violência ou grave ameaça — pena pode ser aplicada até o triplo. Nesse caso, use concurso Material ou ajuste manualmente.</p>`}
+
     h+=`<table><thead><tr><th>Crime</th><th style="text-align:center">Pena</th></tr></thead><tbody>
     <tr><td>${S.crime.n}</td><td class="sc" style="color:var(--gold)">${m2a(penaPrinc)}</td></tr>`;
     ccList.forEach(c=>{if(c.pena>0)h+=`<tr><td>${c.nome||'—'}</td><td class="sc">${m2a(c.pena)}</td></tr>`});
-    h+=`<tr style="background:rgba(201,168,76,.04)"><td style="font-weight:700">${S.concTipo==='material'?'Soma (Art. 69)':'Maior pena + '+f2s(S.concFrac)+' (Art. '+(S.concTipo==='formal'?'70':'71')+')'}</td><td class="sc" style="color:var(--gold);font-size:18px;font-weight:700">${m2a(ccTotal)}</td></tr>
+    h+=`<tr style="background:rgba(201,168,76,.04)"><td style="font-weight:700">${(S.concTipo==='material'||S.concTipo==='formal_imp')?'Soma (Art. '+(S.concTipo==='material'?'69':'70, 2ª parte')+')':'Maior pena + '+f2s(S.concFrac)+' (Art. '+(S.concTipo==='formal'?'70':'71')+')'}</td><td class="sc" style="color:var(--gold);font-size:18px;font-weight:700">${m2a(ccTotal)}</td></tr>
     ${ccTotal>480?`<tr style="background:var(--rDim)"><td style="color:var(--r);font-weight:700">Limite Art. 75 CP (40 anos)</td><td class="sc" style="color:var(--r);font-size:18px;font-weight:700">${m2a(480)}</td></tr>`:''}</tbody></table>`;}
     h+=`</div>`;
 
@@ -330,12 +334,13 @@ function R(){
     const sursis8=(d.pf8<=24&&S.prim)||(S.m70&&d.pf8<=48);
     h+=`<div class="card"><h2><span class="ic ic-green">${IC.file}</span>Benefícios Possíveis</h2><div class="card-sub">Análise automática com base no tipo penal e na pena calculada</div>
     <table><thead><tr><th>Benefício</th><th style="text-align:center">Cabível?</th><th>Fundamento</th><th>Requisitos</th></tr></thead><tbody>
-    <tr><td>Transação penal</td><td class="sc" style="color:${transacao?'var(--g)':'var(--r)'}">${transacao?'Sim':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 76, Lei 9.099/95</td><td style="font-size:11px;color:var(--dim)">Pena máx. ≤ 2 anos ${transacao?'✓':'✗'} (${pMax.toFixed(1)}a)</td></tr>
-    <tr><td>Suspensão cond. do processo</td><td class="sc" style="color:${suspProc?'var(--g)':'var(--r)'}">${suspProc?'Sim':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 89, Lei 9.099/95</td><td style="font-size:11px;color:var(--dim)">Pena mín. ≤ 1 ano ${suspProc?'✓':'✗'} (${pMin.toFixed(1)}a)</td></tr>
-    <tr><td>ANPP</td><td class="sc" style="color:${anpp?'var(--g)':'var(--r)'}">${anpp?'Sim':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 28-A, CPP</td><td style="font-size:11px;color:var(--dim)">Mín.<4a${pMin<4?'✓':'✗'} · S/violência${semVio?'✓':'✗'} · Primário${S.prim?'✓':'✗'} · Não hediondo${!cri.h?'✓':'✗'}</td></tr>
+    <tr><td>Transação penal</td><td class="sc" style="color:${transacao?'var(--g)':'var(--r)'}">${transacao?'Sim*':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 76, Lei 9.099/95</td><td style="font-size:11px;color:var(--dim)">Pena máx. ≤ 2 anos ${transacao?'✓':'✗'} (${pMax.toFixed(1)}a)</td></tr>
+    <tr><td>Suspensão cond. do processo</td><td class="sc" style="color:${suspProc?'var(--g)':'var(--r)'}">${suspProc?'Sim*':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 89, Lei 9.099/95</td><td style="font-size:11px;color:var(--dim)">Pena mín. ≤ 1 ano ${suspProc?'✓':'✗'} (${pMin.toFixed(1)}a)</td></tr>
+    <tr><td>ANPP</td><td class="sc" style="color:${anpp?'var(--g)':'var(--r)'}">${anpp?'Sim*':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 28-A, CPP</td><td style="font-size:11px;color:var(--dim)">Mín.<4a${pMin<4?'✓':'✗'} · S/violência${semVio?'✓':'✗'} · Primário${S.prim?'✓':'✗'} · Não hediondo${!cri.h?'✓':'✗'}</td></tr>
     <tr><td>Substituição por restritiva</td><td class="sc" style="color:${substituicao8?'var(--g)':'var(--r)'}">${substituicao8?'Sim':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 44, CP</td><td style="font-size:11px;color:var(--dim)">${culposo?'Crime culposo ✓ (qualquer pena)':`Pena≤4a${d.pf8<=48?'✓':'✗'} · S/violência${semVio?'✓':'✗'} · Não reinc. espec.${!S.reincEsp?'✓':'✗'}`}</td></tr>
     <tr><td>Sursis (susp. da pena)</td><td class="sc" style="color:${sursis8?'var(--g)':'var(--r)'}">${sursis8?'Sim':'Não'}</td><td style="font-size:11px;color:var(--dim)">Art. 77, CP ${S.m70?'(§2º — idoso)':''}</td><td style="font-size:11px;color:var(--dim)">${S.m70?'Maior 70 ✓ · Pena≤4a'+(d.pf8<=48?'✓':'✗'):'Pena≤2a'+(d.pf8<=24?'✓':'✗')+' · Primário'+(S.prim?'✓':'✗')}</td></tr>
-    ${cri.dt?`<tr><td colspan="4" style="font-size:11px;color:var(--y);font-style:italic">⚠ Crime punido com detenção — não admite regime inicialmente Fechado (Art. 33, caput, CP)</td></tr>`:''}</tbody></table></div>`;
+    ${cri.dt?`<tr><td colspan="4" style="font-size:11px;color:var(--y);font-style:italic">⚠ Crime punido com detenção — não admite regime inicialmente Fechado (Art. 33, caput, CP)</td></tr>`:''}
+    <tr><td colspan="4" style="font-size:10px;color:var(--dim);font-style:italic;padding-top:8px">* Verificar também: não ter sido beneficiado nos últimos 5 anos (transação/ANPP); não ser caso de violência doméstica (ANPP, Art. 28-A, §2º, IV); requisitos subjetivos do Art. 77 (sursis). Requisitos que dependem do histórico processual devem ser confirmados pelo advogado.</td></tr></tbody></table></div>`;
 
     // VERIFICAÇÃO DE REINCIDÊNCIA
     const reincDias=S.dtFimPenaAnt?Math.round((new Date()-new Date(S.dtFimPenaAnt))/86400000):null;
@@ -355,6 +360,7 @@ function R(){
     <tr><td>Dias-multa</td><td class="sc">10</td><td class="sc">360</td></tr>
     <tr><td>Valor do dia-multa</td><td class="sc">R$ ${(smAtual/30).toFixed(2)}</td><td class="sc">R$ ${(smAtual*5).toFixed(2)}</td></tr>
     <tr style="background:rgba(201,168,76,.04)"><td style="font-weight:700">Multa total</td><td class="sc" style="color:var(--g);font-weight:700">R$ ${multaMin.toFixed(2)}</td><td class="sc" style="color:var(--r);font-weight:700">R$ ${multaMax.toFixed(2)}</td></tr>
+    <tr><td colspan="3" style="font-size:10px;color:var(--dim);font-style:italic">Intervalo geral do CP (Arts. 49-52). O tipo penal específico pode prever faixa própria. Multa pode ser triplicada se ineficaz (Art. 60, §1º). Em tráfico: 500-1.500 dias-multa (Art. 33, Lei 11.343).</td></tr>
     </tbody></table></div>`;
 
     // FIANÇA
@@ -444,6 +450,7 @@ function R(){
     ${S.dtInicio?`<tr style="background:rgba(201,168,76,.03)"><td style="font-weight:600">Data 1ª prog. (1/8)</td><td class="sc" style="color:var(--b)">${addM(S.dtInicio,d.pe8*d.prA)}</td><td class="sc" style="color:var(--y)">${addM(S.dtInicio,d.pe8*d.prAC)}</td><td class="sc" style="color:var(--r)">${addM(S.dtInicio,d.pe8*d.prAt)}</td></tr>
     <tr style="background:rgba(201,168,76,.03)"><td style="font-weight:600">Data 2ª prog. (1/8)</td><td class="sc" style="color:var(--b)">${addM(S.dtInicio,2*d.pe8*d.prA)}</td><td class="sc" style="color:var(--y)">${addM(S.dtInicio,2*d.pe8*d.prAC)}</td><td class="sc" style="color:var(--r)">${addM(S.dtInicio,2*d.pe8*d.prAt)}</td></tr>`:''}
     <tr><td>Exame criminológico</td><td class="sc" style="font-size:11px;color:var(--b)">Facultativo</td><td class="sc" style="font-size:11px;color:var(--y)">Facultativo</td><td class="sc" style="font-size:11px;color:var(--r)">Obrigatório</td></tr>
+    <tr><td colspan="4" style="font-size:10px;color:var(--dim);font-style:italic">Lei Atual: Lei 14.843/2024 (exame criminológico obrigatório) + Lei 15.358/2026 (fração 3/4 para org. criminosa). As demais frações de progressão mantêm as do Pacote Anticrime (Lei 13.964/2019).</td></tr>
     </tbody></table></div>`;
 
     h+=`<div class="card"><h2><span class="ic ic-green">${IC.lock}</span>Livramento Condicional</h2>
@@ -600,6 +607,16 @@ function R(){
     <tr><td>Fato → Denúncia</td><td class="sc">${m1!==null?m1:'—'}</td><td class="sc" style="color:${m1!==null&&m1>=pRetD?'var(--r)':'var(--g)'};font-size:12px}">${chkPresc(m1,pRetD)}</td></tr>
     <tr><td>${S.dtPronuncia?'Denúncia → Pronúncia':'Denúncia → Sentença'}</td><td class="sc">${m2!==null?m2:'—'}</td><td class="sc" style="color:${m2!==null&&m2>=pRetD?'var(--r)':'var(--g)'};font-size:12px}">${chkPresc(m2,pRetD)}</td></tr>
     </tbody></table></div>`;}
+
+    // PRESCRIÇÃO INTERCORRENTE (Art. 110, §1º CP)
+    if(S.dtTJAcus&&S.dtTJDef){
+    const mIntercor=diasEntre(S.dtTJAcus,S.dtTJDef);
+    h+=`<div style="margin-top:16px"><div class="rl" style="margin-bottom:8px">PRESCRIÇÃO INTERCORRENTE / EXECUTÓRIA (Art. 110, §1º CP)</div>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:8px">Após o trânsito em julgado para a acusação, a prescrição regula-se pela pena aplicada (não mais pela pena em abstrato). Prazo: ${pRetA} anos = ${pRetD} dias.</p>
+    <table><thead><tr><th>Intervalo</th><th style="text-align:center">Dias</th><th style="text-align:center">Situação</th></tr></thead><tbody>
+    <tr><td>TJ Acusação → TJ Defesa</td><td class="sc">${mIntercor!==null?mIntercor:'—'}</td><td class="sc" style="color:${mIntercor!==null&&mIntercor>=pRetD?'var(--r)':'var(--g)'};font-size:12px">${chkPresc(mIntercor,pRetD)}</td></tr>
+    </tbody></table></div>`;}
+
     h+=`</div>`;}
 
     h+=`<div class="brow"><button class="btn s" onclick="go(2)">← Voltar</button><button class="btn p" onclick="go(4)">Gerar Relatório →</button></div>`;
