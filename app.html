@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PenaPro — Cálculos Penais Inteligentes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c9a84c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PenaPro">
+<meta name="description" content="Calculadora penal completa: dosimetria trifásica, prescrição com marcos, execução penal, progressão, remição, relatórios e petições.">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#08090e;--card:rgba(255,255,255,0.028);--brd:rgba(255,255,255,0.055);--gold:#c9a84c;--gold2:#e8cc73;--goldDim:rgba(201,168,76,0.10);--g:#3ecf8e;--gDim:rgba(62,207,142,0.07);--r:#f05a5a;--rDim:rgba(240,90,90,0.07);--b:#5b9cf5;--bDim:rgba(91,156,245,0.07);--y:#e8a838;--tx:#c8ced8;--dim:#6b7280;--w:#fff}
@@ -652,7 +658,64 @@ function R(){
 }
 
 function go(i){if(i<=S.step){S.step=i;R()}else if(i===S.step+1&&S.crime){S.step=i;R()}}
-function pick(i){S.crime=CR[i];S.step=1;R()}
+function pick(i){
+  let c=parseInt(localStorage.getItem('pp_calc')||'0');
+  if(c>=3&&!localStorage.getItem('pp_pro')){showPaywall();return}
+  localStorage.setItem('pp_calc',String(c+1));
+  S.crime=CR[i];S.step=1;R();
+}
+function ativar(){
+  const code=document.getElementById('pp_code').value.trim();
+  if(code===''){alert('Digite o código de ativação.');return}
+  const validos=['PENAPRO2026','BETA2026'];
+  if(validos.includes(code.toUpperCase())){
+    localStorage.setItem('pp_pro','1');
+    document.getElementById('paywall').remove();
+    alert('PenaPro ativado com sucesso! Acesso ilimitado liberado.');
+  } else {
+    alert('Código inválido. Verifique o e-mail que enviamos após o pagamento.');
+  }
+}
+function showPaywall(){
+  const ov=document.createElement('div');
+  ov.id='paywall';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(6,8,16,0.97);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto';
+  ov.innerHTML=`<div style="max-width:520px;width:100%">
+  <div style="text-align:center;margin-bottom:32px">
+  <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;margin-bottom:8px">Seus 3 cálculos gratuitos acabaram</div>
+  <p style="font-size:14px;color:#6b7280;line-height:1.7">Assine o PenaPro para acesso ilimitado a todos os cálculos, relatórios e funcionalidades.</p>
+  </div>
+  <div style="font-size:11px;color:#c9a84c;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px;text-align:center">Escolha seu plano</div>
+  <div style="display:grid;gap:8px;margin-bottom:24px">
+  <a href="https://buy.stripe.com/SEU_LINK_INDIVIDUAL" target="_blank" style="display:block;padding:16px 20px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;text-decoration:none">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div><div style="font-size:14px;font-weight:700;color:#fff">Individual</div>
+  <div style="font-size:11px;color:#6b7280;margin-top:2px">1 usuário · 30 clientes · 5 relatórios IA/mês</div></div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:#fff">R$ 19<span style="font-size:14px;color:#6b7280">,90</span></div></div></a>
+  <a href="https://buy.stripe.com/SEU_LINK_ESCRITORIO" target="_blank" style="display:block;padding:16px 20px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.15);border-radius:12px;text-decoration:none;position:relative">
+  <div style="position:absolute;top:-8px;right:16px;padding:3px 10px;border-radius:10px;background:#c9a84c;color:#060810;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase">Mais popular</div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div><div style="font-size:14px;font-weight:700;color:#c9a84c">Escritório</div>
+  <div style="font-size:11px;color:#6b7280;margin-top:2px">5 usuários · 150 clientes · WhatsApp · 30 relatórios IA</div></div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:#c9a84c">R$ 49<span style="font-size:14px;color:#6b7280">,90</span></div></div></a>
+  <a href="https://buy.stripe.com/SEU_LINK_PRO" target="_blank" style="display:block;padding:16px 20px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;text-decoration:none">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+  <div><div style="font-size:14px;font-weight:700;color:#fff">Escritório Pro</div>
+  <div style="font-size:11px;color:#6b7280;margin-top:2px">Ilimitado · Logo própria · Minutas de petição IA</div></div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:#fff">R$ 99<span style="font-size:14px;color:#6b7280">,90</span></div></div></a>
+  </div>
+  <div style="font-size:11px;color:#6b7280;text-align:center;margin-bottom:20px">Pagamento seguro via Stripe · Cartão · Cancele quando quiser</div>
+  <div style="border-top:1px solid rgba(255,255,255,0.05);padding-top:20px">
+  <div style="font-size:12px;color:#6b7280;text-align:center;margin-bottom:10px">Já pagou? Insira seu código de ativação:</div>
+  <div style="display:flex;gap:8px">
+  <input id="pp_code" type="text" placeholder="Código de ativação" style="flex:1;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#fff;font-size:14px;font-family:sans-serif;outline:none;text-transform:uppercase">
+  <button onclick="ativar()" style="padding:12px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#c9a84c,#e8cc73);color:#060810;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">Ativar</button>
+  </div></div>
+  <div style="text-align:center;margin-top:20px">
+  <span style="font-size:12px;color:#3a3f48;cursor:pointer;text-decoration:underline" onclick="document.getElementById('paywall').remove()">Voltar</span>
+  </div></div>`;
+  document.body.appendChild(ov);
+}
 function filterC(v){const items=document.querySelectorAll('.crime-item');const vl=v.toLowerCase();items.forEach((el,i)=>{const c=CR[i];el.style.display=(c.n.toLowerCase().includes(vl)||c.a.toLowerCase().includes(vl))?'flex':'none'})}
 function reset(){S={step:0,crime:null,circs:Array(8).fill(false),ag:{},at:{},ca:{},cf:{},di:{},df:{},prim:true,morte:false,org:false,m21:false,m70:false,nome:"",proc:"",dtInicio:"",detDias:0,diasTrab:0,horasEstudo:0,livrosLidos:0,concluiuEnsino:false,faltaGrave:false,regimeIni:"auto",reincEsp:false,dtFato:"",dtDenuncia:"",dtPronuncia:"",dtSentenca:"",dtTJAcus:"",dtTJDef:"",dtFimPenaAnt:"",dtPrisaoPrev:"",gestante:false,maeFilhoMenor:false,enfermoGrave:false,salMin:1518,concCrimes:[],concTipo:"material",concFrac:1/6,unifPenas:[]};R()}
 
@@ -831,6 +894,16 @@ function gen_peticao(){
 }
 
 R();
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;
+  const b=document.createElement('div');b.id='installBanner';
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;padding:14px 20px;background:rgba(201,168,76,0.95);display:flex;justify-content:space-between;align-items:center;z-index:999';
+  b.innerHTML='<div style="font-size:13px;color:#060810;font-weight:600">Instalar PenaPro no celular</div><div style="display:flex;gap:8px"><button onclick="installPWA()" style="padding:8px 16px;border-radius:8px;border:none;background:#060810;color:#c9a84c;font-weight:700;font-size:12px;cursor:pointer">Instalar</button><button onclick="this.parentElement.parentElement.remove()" style="padding:8px 12px;border-radius:8px;border:none;background:transparent;color:#060810;font-size:12px;cursor:pointer">Depois</button></div>';
+  document.body.appendChild(b);
+});
+function installPWA(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;const b=document.getElementById('installBanner');if(b)b.remove()})}}
 </script>
 </body>
 </html>
