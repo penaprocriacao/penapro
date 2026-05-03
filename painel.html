@@ -76,6 +76,7 @@ const SUPABASE_KEY = 'SUA_ANON_KEY_AQUI';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let user = null;
 let clients = [];
+let settings = {};
 let page = 'loading';
 let editId = null;
 let confirmDel = null;
@@ -111,7 +112,7 @@ function calcProx(c){
 // AUTH
 async function checkAuth(){
   const {data}=await sb.auth.getUser();
-  if(data.user){user=data.user;await loadClients();page='dashboard'}
+  if(data.user){user=data.user;await loadClients();await loadSettings();page='dashboard'}
   else{page='login'}
   render();
 }
@@ -158,6 +159,93 @@ async function doResetPass(){
 async function loadClients(){
   const {data,error}=await sb.from('clients').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
   clients=error?[]:data||[];
+}
+
+async function loadSettings(){
+  const {data}=await sb.from('user_settings').select('*').eq('user_id',user.id).single();
+  settings=data||{};
+}
+
+async function saveSettings(){
+  const d={
+    user_id:user.id,
+    nome_escritorio:document.getElementById('s_nome').value,
+    oab:document.getElementById('s_oab').value,
+    telefone:document.getElementById('s_tel').value,
+    logo_base64:settings.logo_base64||null
+  };
+  const exists=settings.id;
+  if(exists){await sb.from('user_settings').update(d).eq('id',settings.id)}
+  else{await sb.from('user_settings').insert(d)}
+  await loadSettings();errMsg='';page='settings_ok';render();
+}
+
+function handleLogo(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>500000){alert('Imagem muito grande. Máximo 500KB.');return}
+  const reader=new FileReader();
+  reader.onload=function(e){settings.logo_base64=e.target.result;render()};
+  reader.readAsDataURL(file);
+}
+
+function removeLogo(){settings.logo_base64=null;render()}
+
+function genClientReport(id){
+  const c=clients.find(x=>x.id===id);if(!c)return;
+  const pe=calcPE(c);const px=calcProx(c);
+  const p2=c.condicao==='primario',h2=c.hediondo,v2=c.violencia,o2=c.org_criminosa,re2=c.condicao==='reincidente_especifico';
+  let fr;if(o2)fr=3/4;else if(h2)fr=p2?2/5:(re2?3/5:1/2);else if(v2)fr=p2?1/4:3/10;else fr=p2?4/25:1/5;
+  let lf;if(o2)lf=null;else if(h2)lf=re2?null:2/3;else lf=p2?1/3:1/2;
+  const dt=c.dt_inicio_cumprimento;
+  const logo=settings.logo_base64;
+  const nomeEsc=settings.nome_escritorio||'';
+  const oab=settings.oab||'';
+
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Informativo — ${c.nome_reu}</title><style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  body{font-family:'DM Sans',Arial,sans-serif;padding:50px;color:#2c3e50;max-width:700px;margin:0 auto;font-size:14px;line-height:1.9}
+  @media print{body{padding:30px}@page{margin:20mm}}
+  h1{color:#1B2A4A;font-size:20px;border-bottom:2px solid #c9a84c;padding-bottom:10px}
+  h2{color:#2C3E6B;font-size:16px;margin-top:28px}
+  .box{background:#f0f4f8;border-left:4px solid #c9a84c;padding:16px 20px;border-radius:0 8px 8px 0;margin:16px 0}
+  .green{background:#e8f5e9;border-left-color:#27AE60}
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #c9a84c}
+  .header img{max-height:60px;max-width:180px}
+  .foot{margin-top:40px;border-top:1px solid #c9a84c;padding-top:12px;font-size:10px;color:#999;text-align:center}
+  </style></head><body>`);
+
+  w.document.write(`<div class="header"><div>${logo?`<img src="${logo}">`:`<div style="font-size:18px;font-weight:700;color:#1B2A4A">${nomeEsc||'PenaPro'}</div>`}</div><div style="text-align:right;font-size:11px;color:#888">${nomeEsc?nomeEsc+'<br>':''}${oab?'OAB: '+oab+'<br>':''}${new Date().toLocaleDateString("pt-BR")}</div></div>`);
+
+  w.document.write(`<h1>Informativo sobre a Situação Penal</h1>`);
+  w.document.write(`<p>Preparado para: <b>${c.nome_reu}</b><br>Processo: ${c.num_processo||'—'}</p>`);
+  w.document.write(`<h2>O que aconteceu</h2><p>${c.nome_reu} foi condenado(a) pelo crime de <b>${c.crime||'—'}</b> (${c.artigo||'—'}). A pena fixada foi de <b>${m2a(c.pena_definitiva)}</b>.</p>`);
+
+  const det=(c.detracao_dias||0)/30;const rem=Math.floor((c.dias_trabalhados||0)/3)+Math.floor((c.horas_estudo||0)/12)+Math.min((c.livros_lidos||0)*4,48);
+  if(det>0||rem>0){
+  w.document.write(`<h2>Descontos na pena</h2>`);
+  if(det>0)w.document.write(`<div class="box"><b>Detração:</b> ${c.detracao_dias} dias já descontados (prisão provisória) = ${m2a(det)}.</div>`);
+  if(rem>0)w.document.write(`<div class="box green"><b>Remição:</b> ${rem} dias descontados por trabalho/estudo = ${m2a(rem/30)}.</div>`);
+  w.document.write(`<p>Pena efetiva a cumprir: <b>${m2a(pe)}</b>.</p>`);}
+
+  w.document.write(`<h2>Regime</h2><p>Regime inicial: <b>${c.regime}</b>.</p>`);
+  if(dt){
+  w.document.write(`<h2>Datas importantes</h2>`);
+  w.document.write(`<div class="box"><b>Início do cumprimento:</b> ${fmt(dt)}</div>`);
+  if(c.regime==='Fechado'){
+  w.document.write(`<div class="box"><b>Progressão para Semiaberto:</b> prevista para <b>${fmt(addM(dt,pe*fr))}</b></div>`);
+  w.document.write(`<div class="box"><b>Progressão para Aberto:</b> prevista para <b>${fmt(addM(dt,2*pe*fr))}</b></div>`);}
+  if(c.regime==='Semiaberto')w.document.write(`<div class="box"><b>Progressão para Aberto:</b> prevista para <b>${fmt(addM(dt,pe*fr))}</b></div>`);
+  if(lf)w.document.write(`<div class="box green"><b>Livramento condicional:</b> previsto para <b>${fmt(addM(dt,pe*lf))}</b></div>`);
+  w.document.write(`<div class="box"><b>Término da pena:</b> <b>${fmt(addM(dt,pe))}</b></div>`);}
+
+  w.document.write(`<h2>Como reduzir a pena</h2>`);
+  w.document.write(`<div class="box green"><b>Trabalhar:</b> 3 dias trabalhados = 1 dia a menos de pena.</div>`);
+  w.document.write(`<div class="box green"><b>Estudar:</b> 12 horas de estudo = 1 dia a menos.</div>`);
+  w.document.write(`<div class="box green"><b>Ler:</b> 1 livro (com resenha) = 4 dias a menos. Até 12 livros/ano.</div>`);
+
+  w.document.write(`<div class="foot">${nomeEsc||'PenaPro'} ${oab?'· OAB: '+oab:''}<br>Documento informativo — não constitui parecer jurídico.</div></body></html>`);
+  w.document.close();w.print();
 }
 
 async function saveForm(id){
@@ -353,8 +441,44 @@ function render(){
   <span class="topbar-user">${nome}</span>
   <button class="tb s" onclick="window.open('app.html')">Calculadora</button>
   <button class="tb s" onclick="nav('manual')">Guia</button>
+  <button class="tb s" onclick="nav('settings')">Config</button>
   <button class="tb s" onclick="doLogout()">Sair</button>
   </div></div></div><div class="wrap">`;
+
+  // SETTINGS
+  if(page==='settings'){
+    h+=`<span class="bk" onclick="nav('dashboard')">← Voltar</span>
+    <div class="crd"><h2>Configurações do Escritório</h2>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:20px">Estas informações aparecem nos relatórios e petições gerados pela plataforma.</p>
+    <div class="g2" style="margin-bottom:14px">
+    <div class="f"><label>Nome do escritório</label><input id="s_nome" value="${settings.nome_escritorio||''}" placeholder="Ex: Silva & Associados Advocacia"></div>
+    <div class="f"><label>OAB</label><input id="s_oab" value="${settings.oab||''}" placeholder="Ex: OAB/DF 12.345"></div></div>
+    <div class="f"><label>Telefone</label><input id="s_tel" value="${settings.telefone||''}" placeholder="(61) 99999-0000" style="max-width:300px"></div>
+
+    <div style="margin:20px 0;padding:20px;background:rgba(255,255,255,0.015);border-radius:12px;border:1px solid var(--brd)">
+    <label class="f" style="margin:0"><label style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Logo do escritório (plano Pro)</label></label>
+    <p style="font-size:11px;color:var(--dim);margin:6px 0 14px">Aparece no cabeçalho dos relatórios. Formatos: JPG, PNG. Máximo: 500KB.</p>
+    ${settings.logo_base64?`<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+    <img src="${settings.logo_base64}" style="max-height:60px;max-width:200px;border-radius:8px;border:1px solid var(--brd)">
+    <button class="btn s" style="width:auto;padding:8px 16px;font-size:12px" onclick="removeLogo()">Remover logo</button></div>`
+    :`<div style="margin-bottom:12px"><p style="font-size:12px;color:var(--dim)">Nenhuma logo enviada</p></div>`}
+    <input type="file" accept="image/jpeg,image/png,image/webp" onchange="handleLogo(this)" style="font-size:12px;color:var(--dim)">
+    </div>
+
+    <div class="acts">
+    <button class="btn p" onclick="saveSettings()">Salvar Configurações</button>
+    <button class="btn s" onclick="nav('dashboard')">Cancelar</button>
+    </div></div>`;
+  }
+
+  // SETTINGS OK
+  if(page==='settings_ok'){
+    h+=`<div style="text-align:center;padding:60px 20px">
+    <div style="font-size:40px;margin-bottom:16px;opacity:.5">✓</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--w);margin-bottom:8px">Configurações salvas</div>
+    <p style="font-size:13px;color:var(--dim);margin-bottom:24px">Suas informações aparecerão nos próximos relatórios gerados.</p>
+    <button class="btn p" style="width:auto;padding:14px 32px" onclick="nav('dashboard')">Voltar ao painel</button></div>`;
+  }
 
   // DASHBOARD
   if(page==='dashboard'){
@@ -404,98 +528,4 @@ function render(){
     <div class="f"><label>Artigo</label><input id="f_artigo" value="${c.artigo||''}"></div></div>
     <div class="g3"><div class="f"><label>Pena — Anos</label><input type="number" min="0" id="f_pena_a" value="${Math.floor((c.pena_definitiva||0)/12)}"></div>
     <div class="f"><label>Pena — Meses</label><input type="number" min="0" max="11" id="f_pena_m" value="${Math.round((c.pena_definitiva||0)%12)}"></div>
-    <div class="f"><label>Pena — Dias</label><input type="number" min="0" max="29" id="f_pena_d" value="${c.pena_dias||0}"></div></div>
-    <div class="g3">
-    <div class="f"><label>Regime inicial</label><select id="f_regime"><option value="Fechado"${c.regime==='Fechado'?' selected':''}>Fechado</option><option value="Semiaberto"${c.regime==='Semiaberto'?' selected':''}>Semiaberto</option><option value="Aberto"${c.regime==='Aberto'?' selected':''}>Aberto</option></select></div>
-    <div class="f"><label>Condição</label><select id="f_cond"><option value="primario"${c.condicao==='primario'?' selected':''}>Primário</option><option value="reincidente"${c.condicao==='reincidente'?' selected':''}>Reincidente</option><option value="reincidente_especifico"${c.condicao==='reincidente_especifico'?' selected':''}>Reinc. específico</option></select></div></div>
-    <div class="g3"><div class="f"><label>Trânsito em julgado</label><input type="date" id="f_transito" value="${c.dt_transito||''}"></div>
-    <div class="f"><label>Início cumprimento</label><input type="date" id="f_inicio" value="${c.dt_inicio_cumprimento||''}"></div>
-    <div class="f"><label>Detração (dias)</label><input type="number" id="f_detracao" value="${c.detracao_dias||0}"></div></div>
-    <div class="g3"><div class="f"><label>Dias trabalhados</label><input type="number" id="f_trab" value="${c.dias_trabalhados||0}"></div>
-    <div class="f"><label>Horas de estudo</label><input type="number" id="f_estudo" value="${c.horas_estudo||0}"></div>
-    <div class="f"><label>Livros lidos</label><input type="number" id="f_livros" value="${c.livros_lidos||0}"></div></div>
-    <div class="g3"><div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_hediondo"${c.hediondo?' checked':''}> Hediondo</label></div>
-    <div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_violencia"${c.violencia?' checked':''}> Violência</label></div>
-    <div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_org"${c.org_criminosa?' checked':''}> Org. criminosa</label></div></div>
-    <div class="f"><label>Observações</label><textarea id="f_obs">${c.observacoes||''}</textarea></div>
-    <div class="acts"><button class="btn p" onclick="saveForm('${isE?c.id:''}')">${isE?'Salvar':'Cadastrar'}</button>
-    <button class="btn s" onclick="nav(${isE?"'view','"+c.id+"'":"'dashboard'"})">Cancelar</button></div></div>`;
-  }
-
-  // VIEW
-  if(page==='view'){
-    const c=clients.find(x=>x.id===editId);
-    if(!c){nav('dashboard');return}
-    const px=calcProx(c);const pe=calcPE(c);
-    h+=`<span class="bk" onclick="nav('dashboard')">← Voltar</span>`;
-    h+=`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px">
-    <div><h2 style="margin:0">${c.nome_reu}</h2><p style="font-size:12px;color:var(--dim);margin-top:4px">${c.num_processo||'—'} · ${c.vara||''}</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="tb p" onclick="nav('edit','${c.id}')">Editar</button>
-    <button class="tb s" onclick="toggleArchive('${c.id}',${!c.arquivado})">${c.arquivado?'Desarquivar':'Arquivar'}</button>
-    <button class="tb s" style="color:var(--r);border-color:rgba(240,90,90,.2)" onclick="confirmDel='${c.id}';render()">Excluir</button>
-    </div></div></div>`;
-
-    h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-    <div class="st"><div class="st-l">Crime</div><div style="font-size:14px;color:var(--w);font-weight:600;margin-top:4px">${c.crime||'—'}</div><div style="font-size:11px;color:var(--dim)">${c.artigo||''}</div></div>
-    <div class="st"><div class="st-l">Pena efetiva</div><div class="st-v">${m2a(pe)}</div><div style="font-size:11px;color:var(--dim)">Def: ${m2a(c.pena_definitiva)}</div></div>
-    <div class="st"><div class="st-l">Próximo evento</div><div class="st-v" style="color:${px.dias!==null&&px.dias<=30?'var(--r)':px.dias<=90?'var(--y)':'var(--g)'}">${px.dias!==null?px.dias+'d':'—'}</div><div style="font-size:11px;color:var(--dim)">${px.evento}</div></div></div>`;
-
-    h+=`<div class="crd"><h2 style="font-size:16px">Dados do Caso</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
-    <div><span style="color:var(--dim)">Condição:</span> <b>${c.condicao==='primario'?'Primário':c.condicao==='reincidente'?'Reincidente':'Reinc. específico'}</b></div>
-    <div><span style="color:var(--dim)">Regime:</span> <b>${c.regime||'—'}</b></div>
-    <div><span style="color:var(--dim)">Início:</span> <b>${fmt(c.dt_inicio_cumprimento)}</b></div>
-    <div><span style="color:var(--dim)">Trânsito:</span> <b>${fmt(c.dt_transito)}</b></div>
-    <div><span style="color:var(--dim)">Detração:</span> <b>${c.detracao_dias||0} dias</b></div>
-    <div><span style="color:var(--dim)">Remição:</span> <b>${Math.floor((c.dias_trabalhados||0)/3)+Math.floor((c.horas_estudo||0)/12)+Math.min((c.livros_lidos||0)*4,48)} dias</b></div>
-    <div><span style="color:var(--dim)">Hediondo:</span> <b>${c.hediondo?'Sim':'Não'}</b></div>
-    <div><span style="color:var(--dim)">Violência:</span> <b>${c.violencia?'Sim':'Não'}</b></div></div>
-    ${c.observacoes?`<div style="margin-top:12px;padding:12px;background:rgba(255,255,255,.015);border-radius:8px;font-size:12px;color:var(--dim)">${c.observacoes}</div>`:''}</div>`;
-
-    // CRONOGRAMA
-    if(c.dt_inicio_cumprimento){
-    const p2=c.condicao==='primario',h2=c.hediondo,v2=c.violencia,o2=c.org_criminosa,re2=c.condicao==='reincidente_especifico';
-    let fr;if(o2)fr=3/4;else if(h2)fr=p2?2/5:(re2?3/5:1/2);else if(v2)fr=p2?1/4:3/10;else fr=p2?4/25:1/5;
-    let lf;if(o2)lf=null;else if(h2)lf=re2?null:2/3;else lf=p2?1/3:1/2;
-    const dt=c.dt_inicio_cumprimento;
-    const pt=(cor,label,data,sub)=>`<div style="position:relative;padding:10px 0 16px 20px">
-    <div style="position:absolute;left:-8px;top:12px;width:14px;height:14px;border-radius:7px;background:${cor};border:2px solid var(--bg)"></div>
-    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;font-weight:600">${label}</div>
-    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:${cor}">${data}</div>
-    ${sub?`<div style="font-size:11px;color:var(--dim)">${sub}</div>`:''}</div>`;
-    h+=`<div class="crd"><h2 style="font-size:16px">Cronograma</h2>
-    <div style="position:relative;padding-left:24px">
-    <div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--gold),var(--y),var(--g),var(--b));border-radius:1px"></div>`;
-    h+=pt('var(--gold)','Início — '+c.regime,fmt(dt),'');
-    if(c.regime==='Fechado'){
-      h+=pt('var(--y)','Fechado → Semiaberto',fmt(addM(dt,pe*fr)),(diasAte(addM(dt,pe*fr))||0)+'d restantes');
-      h+=pt('#9b59b6','Semiaberto → Aberto',fmt(addM(dt,2*pe*fr)),(diasAte(addM(dt,2*pe*fr))||0)+'d restantes');
-    } else if(c.regime==='Semiaberto'){
-      h+=pt('var(--y)','Semiaberto → Aberto',fmt(addM(dt,pe*fr)),(diasAte(addM(dt,pe*fr))||0)+'d restantes');
-    }
-    if(lf)h+=pt('var(--g)','Livramento condicional',fmt(addM(dt,pe*lf)),(diasAte(addM(dt,pe*lf))||0)+'d restantes');
-    else h+=pt('var(--r)','Livramento condicional','Vedado','');
-    h+=pt('var(--b)','Término da pena',fmt(addM(dt,pe)),(diasAte(addM(dt,pe))||0)+'d restantes');
-    h+=`</div></div>`;}
-  }
-
-  h+=`</div>`;
-
-  // CONFIRM DELETE
-  if(confirmDel){
-    h+=`<div class="ov"><div class="ov-b">
-    <div style="font-size:18px;font-weight:700;color:var(--w);margin-bottom:12px">Excluir cliente?</div>
-    <p style="font-size:13px;color:var(--dim);margin-bottom:24px">Esta ação é permanente. Todos os dados deste cliente serão apagados do banco de dados.</p>
-    <div style="display:flex;gap:10px"><button class="btn d" onclick="doDelete('${confirmDel}')">Excluir</button>
-    <button class="btn s" onclick="confirmDel=null;render()">Cancelar</button></div></div></div>`;
-  }
-
-  app.innerHTML=h;
-}
-
-// INIT
-checkAuth();
-</script>
-</body>
-</html>
+    <div class="f"><label>Pena — Dias</lab
