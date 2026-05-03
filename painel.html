@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PenaPro — Painel</title>
+<meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#c9a84c">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -69,8 +70,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 // ============================================
 // CONFIGURAÇÃO — Substitua pelos seus dados
 // ============================================
-const SUPABASE_URL = 'https://SEU_PROJETO.supabase.co';
-const SUPABASE_KEY = 'SUA_ANON_KEY_AQUI';
+const SUPABASE_URL = 'https://cznluywinzinmrhqfabs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HC7TZQUNHP1yuDjbPpzAzg_13nDKdyh';
 // ============================================
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -386,7 +387,7 @@ function render(){
     <div class="crd">
     <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--w);margin-bottom:16px">Política de Privacidade — PenaPro</h2>
     <div style="font-size:12px;color:var(--dim);line-height:2;max-height:400px;overflow-y:auto;padding-right:10px">
-    <p><b style="color:var(--w)">1. Controlador.</b> O controlador dos dados pessoais é o PenaPro, com sede em Brasília/DF. Contato: contato@penapro.com.br.</p>
+    <p><b style="color:var(--w)">1. Controlador.</b> O controlador dos dados pessoais é o PenaPro, com sede em Brasília/DF. Contato: penaprocriacao@gmail.com.</p>
     <p><b style="color:var(--w)">2. Dados coletados.</b> Coletamos: (a) dados de cadastro — nome, e-mail; (b) dados de uso — funcionalidades acessadas, cálculos realizados; (c) dados de clientes inseridos pelo usuário — nomes de réus, números de processos, dados processuais.</p>
     <p><b style="color:var(--w)">3. Finalidade.</b> Os dados são tratados exclusivamente para: (a) prestação do serviço contratado; (b) autenticação e segurança da conta; (c) comunicações relacionadas ao serviço; (d) melhoria da plataforma.</p>
     <p><b style="color:var(--w)">4. Base legal.</b> O tratamento é fundamentado no consentimento do titular (Art. 7º, I, LGPD) e na execução de contrato (Art. 7º, V, LGPD).</p>
@@ -528,4 +529,99 @@ function render(){
     <div class="f"><label>Artigo</label><input id="f_artigo" value="${c.artigo||''}"></div></div>
     <div class="g3"><div class="f"><label>Pena — Anos</label><input type="number" min="0" id="f_pena_a" value="${Math.floor((c.pena_definitiva||0)/12)}"></div>
     <div class="f"><label>Pena — Meses</label><input type="number" min="0" max="11" id="f_pena_m" value="${Math.round((c.pena_definitiva||0)%12)}"></div>
-    <div class="f"><label>Pena — Dias</lab
+    <div class="f"><label>Pena — Dias</label><input type="number" min="0" max="29" id="f_pena_d" value="${c.pena_dias||0}"></div></div>
+    <div class="g3">
+    <div class="f"><label>Regime inicial</label><select id="f_regime"><option value="Fechado"${c.regime==='Fechado'?' selected':''}>Fechado</option><option value="Semiaberto"${c.regime==='Semiaberto'?' selected':''}>Semiaberto</option><option value="Aberto"${c.regime==='Aberto'?' selected':''}>Aberto</option></select></div>
+    <div class="f"><label>Condição</label><select id="f_cond"><option value="primario"${c.condicao==='primario'?' selected':''}>Primário</option><option value="reincidente"${c.condicao==='reincidente'?' selected':''}>Reincidente</option><option value="reincidente_especifico"${c.condicao==='reincidente_especifico'?' selected':''}>Reinc. específico</option></select></div></div>
+    <div class="g3"><div class="f"><label>Trânsito em julgado</label><input type="date" id="f_transito" value="${c.dt_transito||''}"></div>
+    <div class="f"><label>Início cumprimento</label><input type="date" id="f_inicio" value="${c.dt_inicio_cumprimento||''}"></div>
+    <div class="f"><label>Detração (dias)</label><input type="number" id="f_detracao" value="${c.detracao_dias||0}"></div></div>
+    <div class="g3"><div class="f"><label>Dias trabalhados</label><input type="number" id="f_trab" value="${c.dias_trabalhados||0}"></div>
+    <div class="f"><label>Horas de estudo</label><input type="number" id="f_estudo" value="${c.horas_estudo||0}"></div>
+    <div class="f"><label>Livros lidos</label><input type="number" id="f_livros" value="${c.livros_lidos||0}"></div></div>
+    <div class="g3"><div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_hediondo"${c.hediondo?' checked':''}> Hediondo</label></div>
+    <div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_violencia"${c.violencia?' checked':''}> Violência</label></div>
+    <div class="f"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="f_org"${c.org_criminosa?' checked':''}> Org. criminosa</label></div></div>
+    <div class="f"><label>Observações</label><textarea id="f_obs">${c.observacoes||''}</textarea></div>
+    <div class="acts"><button class="btn p" onclick="saveForm('${isE?c.id:''}')">${isE?'Salvar':'Cadastrar'}</button>
+    <button class="btn s" onclick="nav(${isE?"'view','"+c.id+"'":"'dashboard'"})">Cancelar</button></div></div>`;
+  }
+
+  // VIEW
+  if(page==='view'){
+    const c=clients.find(x=>x.id===editId);
+    if(!c){nav('dashboard');return}
+    const px=calcProx(c);const pe=calcPE(c);
+    h+=`<span class="bk" onclick="nav('dashboard')">← Voltar</span>`;
+    h+=`<div class="crd"><div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px">
+    <div><h2 style="margin:0">${c.nome_reu}</h2><p style="font-size:12px;color:var(--dim);margin-top:4px">${c.num_processo||'—'} · ${c.vara||''}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="tb p" onclick="nav('edit','${c.id}')">Editar</button>
+    <button class="tb p" style="background:var(--g)" onclick="genClientReport('${c.id}')">Relatório</button>
+    <button class="tb s" onclick="toggleArchive('${c.id}',${!c.arquivado})">${c.arquivado?'Desarquivar':'Arquivar'}</button>
+    <button class="tb s" style="color:var(--r);border-color:rgba(240,90,90,.2)" onclick="confirmDel='${c.id}';render()">Excluir</button>
+    </div></div></div>`;
+
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="st"><div class="st-l">Crime</div><div style="font-size:14px;color:var(--w);font-weight:600;margin-top:4px">${c.crime||'—'}</div><div style="font-size:11px;color:var(--dim)">${c.artigo||''}</div></div>
+    <div class="st"><div class="st-l">Pena efetiva</div><div class="st-v">${m2a(pe)}</div><div style="font-size:11px;color:var(--dim)">Def: ${m2a(c.pena_definitiva)}</div></div>
+    <div class="st"><div class="st-l">Próximo evento</div><div class="st-v" style="color:${px.dias!==null&&px.dias<=30?'var(--r)':px.dias<=90?'var(--y)':'var(--g)'}">${px.dias!==null?px.dias+'d':'—'}</div><div style="font-size:11px;color:var(--dim)">${px.evento}</div></div></div>`;
+
+    h+=`<div class="crd"><h2 style="font-size:16px">Dados do Caso</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+    <div><span style="color:var(--dim)">Condição:</span> <b>${c.condicao==='primario'?'Primário':c.condicao==='reincidente'?'Reincidente':'Reinc. específico'}</b></div>
+    <div><span style="color:var(--dim)">Regime:</span> <b>${c.regime||'—'}</b></div>
+    <div><span style="color:var(--dim)">Início:</span> <b>${fmt(c.dt_inicio_cumprimento)}</b></div>
+    <div><span style="color:var(--dim)">Trânsito:</span> <b>${fmt(c.dt_transito)}</b></div>
+    <div><span style="color:var(--dim)">Detração:</span> <b>${c.detracao_dias||0} dias</b></div>
+    <div><span style="color:var(--dim)">Remição:</span> <b>${Math.floor((c.dias_trabalhados||0)/3)+Math.floor((c.horas_estudo||0)/12)+Math.min((c.livros_lidos||0)*4,48)} dias</b></div>
+    <div><span style="color:var(--dim)">Hediondo:</span> <b>${c.hediondo?'Sim':'Não'}</b></div>
+    <div><span style="color:var(--dim)">Violência:</span> <b>${c.violencia?'Sim':'Não'}</b></div></div>
+    ${c.observacoes?`<div style="margin-top:12px;padding:12px;background:rgba(255,255,255,.015);border-radius:8px;font-size:12px;color:var(--dim)">${c.observacoes}</div>`:''}</div>`;
+
+    // CRONOGRAMA
+    if(c.dt_inicio_cumprimento){
+    const p2=c.condicao==='primario',h2=c.hediondo,v2=c.violencia,o2=c.org_criminosa,re2=c.condicao==='reincidente_especifico';
+    let fr;if(o2)fr=3/4;else if(h2)fr=p2?2/5:(re2?3/5:1/2);else if(v2)fr=p2?1/4:3/10;else fr=p2?4/25:1/5;
+    let lf;if(o2)lf=null;else if(h2)lf=re2?null:2/3;else lf=p2?1/3:1/2;
+    const dt=c.dt_inicio_cumprimento;
+    const pt=(cor,label,data,sub)=>`<div style="position:relative;padding:10px 0 16px 20px">
+    <div style="position:absolute;left:-8px;top:12px;width:14px;height:14px;border-radius:7px;background:${cor};border:2px solid var(--bg)"></div>
+    <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;font-weight:600">${label}</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:${cor}">${data}</div>
+    ${sub?`<div style="font-size:11px;color:var(--dim)">${sub}</div>`:''}</div>`;
+    h+=`<div class="crd"><h2 style="font-size:16px">Cronograma</h2>
+    <div style="position:relative;padding-left:24px">
+    <div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--gold),var(--y),var(--g),var(--b));border-radius:1px"></div>`;
+    h+=pt('var(--gold)','Início — '+c.regime,fmt(dt),'');
+    if(c.regime==='Fechado'){
+      h+=pt('var(--y)','Fechado → Semiaberto',fmt(addM(dt,pe*fr)),(diasAte(addM(dt,pe*fr))||0)+'d restantes');
+      h+=pt('#9b59b6','Semiaberto → Aberto',fmt(addM(dt,2*pe*fr)),(diasAte(addM(dt,2*pe*fr))||0)+'d restantes');
+    } else if(c.regime==='Semiaberto'){
+      h+=pt('var(--y)','Semiaberto → Aberto',fmt(addM(dt,pe*fr)),(diasAte(addM(dt,pe*fr))||0)+'d restantes');
+    }
+    if(lf)h+=pt('var(--g)','Livramento condicional',fmt(addM(dt,pe*lf)),(diasAte(addM(dt,pe*lf))||0)+'d restantes');
+    else h+=pt('var(--r)','Livramento condicional','Vedado','');
+    h+=pt('var(--b)','Término da pena',fmt(addM(dt,pe)),(diasAte(addM(dt,pe))||0)+'d restantes');
+    h+=`</div></div>`;}
+  }
+
+  h+=`</div>`;
+
+  // CONFIRM DELETE
+  if(confirmDel){
+    h+=`<div class="ov"><div class="ov-b">
+    <div style="font-size:18px;font-weight:700;color:var(--w);margin-bottom:12px">Excluir cliente?</div>
+    <p style="font-size:13px;color:var(--dim);margin-bottom:24px">Esta ação é permanente. Todos os dados deste cliente serão apagados do banco de dados.</p>
+    <div style="display:flex;gap:10px"><button class="btn d" onclick="doDelete('${confirmDel}')">Excluir</button>
+    <button class="btn s" onclick="confirmDel=null;render()">Cancelar</button></div></div></div>`;
+  }
+
+  app.innerHTML=h;
+}
+
+// INIT
+checkAuth();
+</script>
+</body>
+</html>
