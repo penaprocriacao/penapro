@@ -1,0 +1,9 @@
+{
+  "name": "penapro",
+  "version": "1.0.0",
+  "description": "PenaPro — Cálculos Penais Inteligentes",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.0.0"
+  }
+}
