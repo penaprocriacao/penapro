@@ -901,4 +901,106 @@ function gen_cliente(){
 
   if(d.det>0||d.remTotal>0){
   w.document.write(`<h2>Descontos na pena</h2><p>A lei permite reduzir o tempo de pena de algumas formas:</p>`);
-  if(d.det>0) w.document.write(`<div class="box">⏱ <b>Tempo já 
+  if(d.det>0) w.document.write(`<div class="box">⏱ <b>Tempo já descontado (detração):</b> ${S.detDias} dias que já ficou preso antes da condenação foram abatidos. Isso equivale a ${m2a(d.det)}.</div>`);
+  if(d.remTotal>0) w.document.write(`<div class="box green">📚 <b>Remição por trabalho/estudo:</b> ${d.remTotal} dias foram descontados da pena por causa do trabalho e estudo realizados. Isso equivale a ${m2a(d.remMeses)}.</div>`);
+  w.document.write(`<p>Com esses descontos, a <b>pena efetiva</b> a cumprir é de <b>${m2a(d.pe8)}</b>.</p>`);}
+
+  w.document.write(`<h2>Regime de cumprimento</h2>`);
+  w.document.write(`<p>O regime inicial é <b>${d.regIni}</b>. `);
+  if(d.regIni==='Fechado') w.document.write(`Isso significa que a pena começa em presídio, com regras mais rígidas. Com bom comportamento e cumprindo os requisitos legais, é possível pedir mudança para o regime semiaberto e depois para o aberto.</p>`);
+  else if(d.regIni==='Semiaberto') w.document.write(`Isso permite mais benefícios que o regime fechado, como saídas temporárias e trabalho externo. Com bom comportamento, é possível progredir para o regime aberto.</p>`);
+  else w.document.write(`Este é o regime mais brando, cumprido fora do presídio, com obrigações como trabalho e recolhimento noturno.</p>`);
+
+  w.document.write(`<h2>Datas importantes</h2>`);
+  w.document.write(`<div class="box"><b>Início do cumprimento:</b> ${dtIni}</div>`);
+  if(S.dtInicio){
+  if(d.regIni==='Fechado'){
+  w.document.write(`<div class="box"><b>Progressão para Semiaberto:</b> prevista para <b>${addM(S.dtInicio,d.pe8*d.prAt)}</b> (após cumprir ${f2s(d.prAt)} da pena = ${m2a(d.pe8*d.prAt)})</div>`);
+  w.document.write(`<div class="box"><b>Progressão para Aberto:</b> prevista para <b>${addM(S.dtInicio,2*d.pe8*d.prAt)}</b></div>`);}
+  if(d.regIni==='Semiaberto') w.document.write(`<div class="box"><b>Progressão para Aberto:</b> prevista para <b>${addM(S.dtInicio,d.pe8*d.prAt)}</b></div>`);
+  if(d.lAt) w.document.write(`<div class="box green"><b>Livramento condicional:</b> previsto para <b>${addM(S.dtInicio,d.pe8*d.lAt)}</b>. A partir dessa data, pode ser solto com algumas condições a cumprir.</div>`);
+  else w.document.write(`<div class="box" style="border-left-color:#e74c3c"><b>Livramento condicional:</b> vedado para este tipo de crime.</div>`);
+  w.document.write(`<div class="box"><b>Término da pena:</b> <b>${addM(S.dtInicio,d.pe8)}</b></div>`);}
+
+  w.document.write(`<h2>O que pode ser feito para reduzir a pena</h2>`);
+  w.document.write(`<div class="box green"><b>Trabalhar:</b> a cada 3 dias trabalhados, 1 dia é descontado da pena.</div>`);
+  w.document.write(`<div class="box green"><b>Estudar:</b> a cada 12 horas de estudo, 1 dia é descontado. Se concluir o ensino fundamental, médio ou superior, ganha mais 1/3 de bônus.</div>`);
+  w.document.write(`<div class="box green"><b>Ler:</b> a cada livro lido (com resenha aprovada), 4 dias são descontados. Pode ler até 12 livros por ano.</div>`);
+  w.document.write(`<p>Trabalhar e estudar são as melhores formas de antecipar a liberdade. Além de reduzir a pena, demonstram bom comportamento, o que ajuda nos pedidos de progressão de regime e livramento condicional.</p>`);
+
+  w.document.write(`<div class="foot">Documento informativo gerado por <b>PenaPro</b><br>Este documento tem caráter informativo e não constitui parecer jurídico.</div></body></html>`);
+  w.document.close();w.print();
+}
+
+function gen_peticao(){
+  const c=S.crime,d=calc();if(!c)return;const w=window.open('','_blank');
+  const dtIni=S.dtInicio?new Date(S.dtInicio).toLocaleDateString("pt-BR"):"___/___/______";
+  const dtHoje=new Date().toLocaleDateString("pt-BR");
+  const reg2=d.regIni==='Fechado'?'Semiaberto':'Aberto';
+  w.document.write(`<html><head><title>Petição — Progressão — ${S.nome||'Reeducando'}</title><style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  body{font-family:'DM Sans',Times,serif;padding:60px;color:#1a1a2e;max-width:700px;margin:0 auto;font-size:13px;line-height:2;text-align:justify}
+  h1{text-align:center;font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:30px}
+  h2{font-size:14px;text-transform:uppercase;margin-top:30px;margin-bottom:10px}
+  .center{text-align:center}
+  .bold{font-weight:700}
+  .indent{text-indent:60px}
+  .foot{margin-top:60px;font-size:10px;color:#999;text-align:center;border-top:1px solid #ddd;padding-top:10px}
+  @media print{body{padding:40px}}</style></head><body>`);
+
+  w.document.write(`<p class="center bold">EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA VARA DE EXECUÇÕES PENAIS DA COMARCA DE _______________</p>`);
+  w.document.write(`<br><br><br>`);
+  w.document.write(`<p class="center">Processo de Execução nº ${S.proc||'_______________'}</p>`);
+  w.document.write(`<br><br>`);
+
+  w.document.write(`<p class="indent"><b>${S.nome||'[NOME DO(A) REEDUCANDO(A)]'}</b>, já qualificado(a) nos autos do processo em epígrafe, por seu advogado que esta subscreve, vem, respeitosamente, à presença de Vossa Excelência, com fundamento no <b>art. 112 da Lei de Execução Penal</b> (Lei nº 7.210/84), requerer</p>`);
+  w.document.write(`<p class="center bold" style="font-size:15px;margin:20px 0">PROGRESSÃO DE REGIME</p>`);
+  w.document.write(`<p class="center">do regime ${d.regIni} para o regime ${reg2}</p>`);
+  w.document.write(`<p>pelos fatos e fundamentos a seguir expostos.</p>`);
+
+  w.document.write(`<h2>I — Dos Fatos</h2>`);
+  w.document.write(`<p class="indent">O(A) reeducando(a) foi condenado(a) pela prática do crime de <b>${c.n}</b> (${c.a}), à pena de <b>${m2a(d.pf8)}</b>, em regime inicialmente <b>${d.regIni}</b>.</p>`);
+  w.document.write(`<p class="indent">O cumprimento da pena teve início em <b>${dtIni}</b>. ${d.det>0?'Foram computados <b>'+S.detDias+' dias</b> de detração referentes ao período de prisão provisória (Art. 42, CP).':''} ${d.remTotal>0?'O(A) reeducando(a) obteve remição de <b>'+d.remTotal+' dias</b> por trabalho e/ou estudo (Art. 126, LEP), resultando em pena efetiva de <b>'+m2a(d.pe8)+'</b>.':''}</p>`);
+
+  w.document.write(`<h2>II — Do Direito</h2>`);
+  w.document.write(`<p class="indent">O art. 112 da Lei de Execução Penal estabelece que a pena privativa de liberdade será executada em forma progressiva, com a transferência para regime menos rigoroso, após o cumprimento da fração legal no regime anterior.</p>`);
+  w.document.write(`<p class="indent">No caso em tela, tratando-se de crime ${c.v?'praticado com violência ou grave ameaça':'praticado sem violência'}, ${c.h?'de natureza hedionda,':''} sendo o(a) reeducando(a) <b>${S.prim?'primário(a)':'reincidente'}</b>, a fração exigida para progressão é de <b>${f2s(d.prAt)}</b> da pena, nos termos do art. 112, ${c.h?(S.prim?'inciso V':'inciso VII'):c.v?(S.prim?'inciso III':'inciso IV'):(S.prim?'inciso I':'inciso II')}, da LEP.</p>`);
+  w.document.write(`<p class="indent">Aplicando-se a fração de ${f2s(d.prAt)} sobre a pena efetiva de ${m2a(d.pe8)}, o lapso temporal necessário para a progressão é de <b>${m2a(d.pe8*d.prAt)}</b>, cuja data prevista é <b>${S.dtInicio?addM(S.dtInicio,d.pe8*d.prAt):'a ser calculada'}</b>.</p>`);
+
+  if(d.remTotal>0){
+  w.document.write(`<p class="indent">Cabe ressaltar que, nos termos do art. 128 da LEP, com redação dada pela Lei nº 12.433/2011, <b>"o tempo remido será computado como pena cumprida, para todos os efeitos"</b>, incluindo a progressão de regime. A Súmula 562 do STJ corrobora esse entendimento.</p>`);}
+
+  w.document.write(`<h2>III — Do Preenchimento dos Requisitos</h2>`);
+  w.document.write(`<p class="indent"><b>a) Requisito objetivo:</b> o(a) reeducando(a) já cumpriu tempo suficiente para fazer jus à progressão, conforme demonstrado nos cálculos acima.</p>`);
+  w.document.write(`<p class="indent"><b>b) Requisito subjetivo:</b> o(a) reeducando(a) apresenta bom comportamento carcerário, conforme atestado pela direção do estabelecimento prisional. ${d.remTotal>0?'A dedicação ao trabalho e/ou estudo evidencia o comprometimento com a ressocialização.':''}</p>`);
+
+  w.document.write(`<h2>IV — Dos Pedidos</h2>`);
+  w.document.write(`<p class="indent">Ante o exposto, requer a Vossa Excelência:</p>`);
+  w.document.write(`<p class="indent">a) A <b>progressão do regime ${d.regIni} para o regime ${reg2}</b>, nos termos do art. 112 da LEP;</p>`);
+  w.document.write(`<p class="indent">b) A oitiva do Ministério Público;</p>`);
+  w.document.write(`<p class="indent">c) A requisição do atestado de comportamento carcerário junto à direção do estabelecimento prisional;</p>`);
+  w.document.write(`<p class="indent">d) A expedição da competente guia de transferência, após o deferimento.</p>`);
+
+  w.document.write(`<p style="margin-top:40px" class="center">Termos em que,<br>pede deferimento.</p>`);
+  w.document.write(`<p class="center" style="margin-top:30px">_______________, ${dtHoje}.</p>`);
+  w.document.write(`<br><br>`);
+  w.document.write(`<p class="center">_____________________________________________<br><b>Advogado(a)</b><br>OAB/___ nº ___________</p>`);
+
+  w.document.write(`<div class="foot">Minuta gerada por <b>PenaPro</b> — Cálculos Penais Inteligentes<br>Este documento é uma minuta e deve ser revisado pelo advogado antes do protocolo.</div></body></html>`);
+  w.document.close();w.print();
+}
+
+R();
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;
+  const b=document.createElement('div');b.id='installBanner';
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;padding:14px 20px;background:rgba(201,168,76,0.95);display:flex;justify-content:space-between;align-items:center;z-index:999';
+  b.innerHTML='<div style="font-size:13px;color:#060810;font-weight:600">Instalar PenaPro no celular</div><div style="display:flex;gap:8px"><button onclick="installPWA()" style="padding:8px 16px;border-radius:8px;border:none;background:#060810;color:#c9a84c;font-weight:700;font-size:12px;cursor:pointer">Instalar</button><button onclick="this.parentElement.parentElement.remove()" style="padding:8px 12px;border-radius:8px;border:none;background:transparent;color:#060810;font-size:12px;cursor:pointer">Depois</button></div>';
+  document.body.appendChild(b);
+});
+function installPWA(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;const b=document.getElementById('installBanner');if(b)b.remove()})}}
+</script>
+</body>
+</html>
